@@ -30,6 +30,17 @@ class SingleTRProcessor:
                 'ready to perform the real-time classification'
                 )
 
+    def _prepare_data(self, start_tr, end_tr):
+        # normalize the data
+        data = np.copy(self.raw_data[start_tr: end_tr + 1])
+        data = zscore(data, axis=0, ddof=0)
+        # if zscore fails (standard deviation is zero),
+        # set all values to be zero
+        data = np.nan_to_num(data)
+        data = data / math.sqrt(data.shape[0])
+        return data
+
+
     def process_single_tr_nifti(self, nifti_file, tr_count):
         # read
         data = nib.load(nifti_file).get_data()
@@ -42,14 +53,20 @@ class SingleTRProcessor:
         elif self.epoch[tr_count] == 0:
             self.current_epoch = -1
         elif tr_count - self.current_epoch + 1 >= self.window:
-            # normalize the raw data
-            raw_data = self.raw_data[self.current_epoch: tr_count + 1]
-            raw_data = zscore(raw_data, axis=0, ddof=0)
-            # if zscore fails (standard deviation is zero),
-            # set all values to be zero
-            raw_data = np.nan_to_num(raw_data)
-            raw_data = raw_data / math.sqrt(raw_data.shape[0])
+            data = self._prepare_data(self.current_epoch,
+                                     tr_count)
             # predict, waiting for BrainIAK
-            y_pred = self.clf.predict([raw_data])
-            logger.info('predicted: %d', y_pred[0])
+            y_pred = self.clf.predict([data])
+            logger.info(
+                        'predicted: %d, growing window, window size: %d' %
+                        (y_pred[0], tr_count + 1 - self.current_epoch)
+                       )
+            data = self._prepare_data(self.current_epoch,
+                                      self.current_epoch + self.window - 1)
+            # predict, waiting for BrainIAK
+            y_pred = self.clf.predict([data])
+            logger.info(
+                        'predicted: %d, sliding window, window size: %d' %
+                        (y_pred[0], self.window)
+                       )
         return
