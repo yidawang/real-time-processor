@@ -31,6 +31,9 @@ class EventHandler(pyinotify.ProcessEvent):
                 (filename, (time2 - time1) * 1000)
                 )
         self.tr_count += 1
+        if self.tr_count == self.stp.total:
+            logger.info('experiment is done, exit')
+            sys.exit(1)
 
 
 class NiftiFileWatcher():
@@ -42,12 +45,12 @@ class NiftiFileWatcher():
         elif not os.path.isdir(self.path):
             logger.error('path argument must be a directory')
             sys.exit(1)
-        logger.setLevel(getattr(logging, (options.get('loglevel') or 'info').upper()))
         epoch_file = options.get('epoch')
         mask_file = options.get('mask')
+        model_file = options.get('model')
         window = options.get('window') or 8
         total = options.get('total') or 1500
-        stp = SingleTRProcessor(epoch_file, mask_file, total, window)
+        stp = SingleTRProcessor(epoch_file, mask_file, model_file, total, window)
         self.handler = EventHandler(stp)
 
     def watch_dir(self):
@@ -63,7 +66,7 @@ if __name__ == '__main__':
     arg_parser.add_argument('directory', help='path to the monitored directory')
     arg_parser.add_argument('epoch', help='path to the numpy file of epoch info in 1D array')
     arg_parser.add_argument('mask', help='path to the mask file which specifies the top voxels')
-    arg_parser.add_argument('-l', '--loglevel', help='log level [INFO]')
+    arg_parser.add_argument('model', help='path to the model\'s pickle file, usually *.pkl')
     arg_parser.add_argument('-w', '--window', type=int, help='correlation window size [8]')
     arg_parser.add_argument('-t', '--total', type=int, help='total number of TRs generated in real-time [1500]')
 
