@@ -5,6 +5,7 @@ import math
 from scipy.stats.mstats import zscore
 from brainiak.fcma.classifier import Classifier
 from sklearn.externals import joblib
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -17,13 +18,19 @@ class SingleTRProcessor:
         self.num_voxels = len(np.where(self.mask > 0)[0])
         self.raw_data = np.zeros((self.total, self.num_voxels), np.float32, order='C')
         self.current_epoch = -1
+        time1 = time.time()
         self.clf = joblib.load(model_file)
         assert isinstance(self.clf, Classifier), \
                 'the loaded classifier is incorrect'
+        time2 = time.time()
+        logger.info(
+            'model loading done, takes: %.2f s' %
+            (time2 - time1)
+        )
         logger.debug(
                 '%d voxels per brain in the classifier, ' \
                 '%d training samples involved' %
-                (self.clf.num_voxels, self.clf.num_samples)
+                (self.clf.num_voxels_, self.clf.num_samples_)
                 )
         logger.info(
                 'Single TR processor initialized, '\
@@ -53,17 +60,17 @@ class SingleTRProcessor:
         elif self.epoch[tr_count] == 0:
             self.current_epoch = -1
         elif tr_count - self.current_epoch + 1 >= self.window:
-            data = self._prepare_data(self.current_epoch,
-                                     tr_count)
-            # predict, waiting for BrainIAK
-            y_pred = self.clf.predict([data])
-            logger.info(
-                        'predicted: %d, growing window, window size: %d' %
-                        (y_pred[0], tr_count + 1 - self.current_epoch)
-                       )
-            data = self._prepare_data(self.current_epoch,
-                                      self.current_epoch + self.window - 1)
-            # predict, waiting for BrainIAK
+            #data = self._prepare_data(self.current_epoch,
+            #                         tr_count)
+            # predict, calling BrainIAK
+            #y_pred = self.clf.predict([data])
+            #logger.info(
+            #            'predicted: %d, growing window, window size: %d' %
+            #            (y_pred[0], tr_count + 1 - self.current_epoch)
+            #           )
+            data = self._prepare_data(tr_count - self.window + 1,
+                                      tr_count)
+            # predict, calling BrainIAK
             y_pred = self.clf.predict([data])
             logger.info(
                         'predicted: %d, sliding window, window size: %d' %
