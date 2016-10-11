@@ -60,14 +60,14 @@ class SingleTRProcessor:
         elif self.epoch[tr_count] == 0:
             self.current_epoch = -1
         elif tr_count - self.current_epoch + 1 >= self.window:
-            #data = self._prepare_data(self.current_epoch,
-            #                         tr_count)
+            data = self._prepare_data(self.current_epoch,
+                                     tr_count)
             # predict, calling BrainIAK
-            #y_pred = self.clf.predict([data])
-            #logger.info(
-            #            'predicted: %d, growing window, window size: %d' %
-            #            (y_pred[0], tr_count + 1 - self.current_epoch)
-            #           )
+            y_pred = self.clf.predict([data])
+            logger.info(
+                        'predicted: %d, growing window, window size: %d' %
+                        (y_pred[0], tr_count + 1 - self.current_epoch)
+                       )
             data = self._prepare_data(tr_count - self.window + 1,
                                       tr_count)
             # predict, calling BrainIAK
