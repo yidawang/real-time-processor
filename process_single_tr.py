@@ -64,16 +64,18 @@ class SingleTRProcessor:
                                      tr_count)
             # predict, calling BrainIAK
             y_pred = self.clf.predict([data])
+            confidence = self.clf.decision_function([data])
             logger.info(
-                        'predicted: %d, growing window, window size: %d' %
-                        (y_pred[0], tr_count + 1 - self.current_epoch)
+                        'predicted: %d with confidence %.2f, growing window, window size: %d' %
+                        (y_pred[0], abs(confidence), tr_count + 1 - self.current_epoch)
                        )
             data = self._prepare_data(tr_count - self.window + 1,
                                       tr_count)
             # predict, calling BrainIAK
             y_pred = self.clf.predict([data])
+            confidence = self.clf.decision_function([data])
             logger.info(
-                        'predicted: %d, sliding window, window size: %d' %
-                        (y_pred[0], self.window)
+                        'predicted: %d with confidence %.2f, sliding window, window size: %d' %
+                        (y_pred[0], abs(confidence), self.window)
                        )
         return
